@@ -1,0 +1,99 @@
+ @tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+* { box-sizing: border-box; }
+
+body {
+  background:
+    radial-gradient(1200px 500px at 100% -10%, rgba(251,146,60,0.10), transparent 60%),
+    #FFF7ED;
+}
+
+::-webkit-scrollbar { width: 8px; height: 8px; }
+::-webkit-scrollbar-thumb { background: #FCD9B8; border-radius: 8px; }
+::-webkit-scrollbar-thumb:hover { background: #FB923C; }
+::-webkit-scrollbar-track { background: transparent; }
+
+:focus-visible { outline: 2px solid #F97316; outline-offset: 2px; border-radius: 8px; }
+
+@layer components {
+  .card { @apply bg-card border border-border rounded-xl2 shadow-card; }
+  .card-hover { @apply transition-all duration-200 hover:shadow-cardhover hover:-translate-y-0.5; }
+
+  .btn { @apply inline-flex items-center gap-2 px-4 py-2.5 rounded-xl2 text-[13.5px] font-semibold transition-all duration-150 whitespace-nowrap; }
+  .btn-primary { @apply bg-gradient-to-br from-primary to-secondary text-white shadow-[0_8px_18px_-6px_rgba(249,115,22,0.5)] hover:brightness-105 hover:-translate-y-0.5; }
+  .btn-outline { @apply bg-white border border-border text-ink hover:border-primary hover:text-primary-600; }
+  .btn-soft { @apply bg-orange-100 text-primary-700 hover:bg-orange-200; }
+  .btn-danger { @apply bg-red-50 text-red-600 border border-red-200 hover:bg-red-100; }
+
+  .input { @apply w-full px-3 py-2.5 rounded-xl2 border border-border bg-[#FAFAF9] text-[13.5px] transition-all duration-150 focus:outline-none focus:border-primary focus:bg-white focus:ring-4 focus:ring-orange-100; }
+  .label { @apply block text-[12.5px] font-semibold text-ink mb-1.5; }
+
+  .badge { @apply inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-bold whitespace-nowrap; }
+  .badge-success { @apply bg-green-100 text-green-700; }
+  .badge-danger { @apply bg-red-100 text-red-700; }
+  .badge-warning { @apply bg-amber-100 text-amber-800; }
+  .badge-info { @apply bg-blue-100 text-blue-700; }
+  .badge-neutral { @apply bg-gray-100 text-gray-600; }
+  .badge-orange { @apply bg-orange-100 text-primary-700; }
+
+  .th { @apply text-left px-5 py-3 text-[11px] font-bold text-gray-400 uppercase tracking-wide border-b border-border bg-[#FFFCF8] whitespace-nowrap; }
+  .td { @apply px-5 py-3.5 border-b border-[#F3F1EC] text-ink align-middle text-[13px]; }
+
+  .skeleton { @apply bg-gray-100 rounded-lg relative overflow-hidden; }
+  .skeleton::after { content:''; position:absolute; inset:0; background: linear-gradient(90deg, transparent, rgba(255,255,255,0.6), transparent); animation: shimmer 1.4s infinite; }
+}
+
+@keyframes shimmer { 0% { transform: translateX(-100%); } 100% { transform: translateX(100%); } }
+@keyframes fadeUp { from { opacity:0; transform: translateY(8px);} to { opacity:1; transform:translateY(0);} }
+.page-enter { animation: fadeUp .3s ease both; }
+
+/* Dark Mode Overrides */
+.dark body {
+  background: #0F172A;
+  color: #F8FAFC;
+}
+.dark .card, .dark aside, .dark header {
+  background: #1E293B !important;
+  border-color: #334155 !important;
+}
+.dark .text-gray-900, .dark .text-ink {
+  color: #F8FAFC !important;
+}
+.dark .text-gray-500, .dark .text-gray-600, .dark .text-inksoft {
+  color: #94A3B8 !important;
+}
+.dark .border-border, .dark .border-gray-100, .dark .border-gray-200 {
+  border-color: #334155 !important;
+}
+.dark .bg-white, .dark .bg-gray-50, .dark .bg-\[\#FAFAF9\], .dark .bg-\[\#FFFCF8\] {
+  background-color: #0F172A !important;
+}
+.dark .input {
+  background-color: #0F172A !important;
+  color: #F8FAFC !important;
+  border-color: #334155 !important;
+}
+.dark .btn-outline {
+  background-color: transparent !important;
+  color: #F8FAFC !important;
+  border-color: #334155 !important;
+}
+.dark .btn-outline:hover {
+  border-color: #F97316 !important;
+  color: #F97316 !important;
+}
+.dark .td, .dark .th {
+  border-color: #334155 !important;
+}
+.dark .badge-neutral {
+  background-color: #334155 !important;
+  color: #F8FAFC !important;
+}
+.dark .bg-white\/60 {
+  background-color: rgba(30, 41, 59, 0.8) !important;
+}
+.dark .shadow-sm, .dark .shadow-card {
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.3) !important;
+}

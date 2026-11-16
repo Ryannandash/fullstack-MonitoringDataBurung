@@ -1,0 +1,484 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+model Dome {
+  id       Int       @id @default(autoincrement())
+  name     String
+  region   String?
+  areaSize Float?
+  habitats Habitat[]
+
+  @@map("dome")
+}
+
+model Habitat {
+  id             Int            @id @default(autoincrement())
+  domeId         Int
+  dome           Dome           @relation(fields: [domeId], references: [id])
+  name           String
+  vegetationType String?
+  areaSize       Float?
+  description    String?
+  birds          Bird[]
+  transfersFrom  BirdTransfer[] @relation("TransferFrom")
+  transfersTo    BirdTransfer[] @relation("TransferTo")
+  cleaningRecords CleaningRecord[]
+  tasks          TaskAssignment[]
+
+  @@map("habitat")
+}
+
+model Species {
+  id                 Int     @id @default(autoincrement())
+  scientificName     String
+  localName          String
+  conservationStatus String?
+  dietType           String?
+  keyTrait           String?  @map("key_trait")
+  distributionStatus String?  @map("distribution_status")
+  vegetation         String?  @db.LongText
+  isProtected        Boolean  @default(false) @map("is_protected")
+  avgLifespan        Float?
+  description        String?
+  photoUrl           String?
+  isRare             Boolean @default(false) @map("is_rare")
+  birds              Bird[]
+
+  @@map("species")
+}
+
+model Bird {
+  id               Int               @id @default(autoincrement())
+  speciesId        Int
+  habitatId        Int
+  species          Species           @relation(fields: [speciesId], references: [id])
+  habitat          Habitat           @relation(fields: [habitatId], references: [id])
+  ringNumber       String            @unique
+  name             String?
+  birthDate        DateTime?
+  gender           String?
+  statusHealth     String?
+  uniqueMark       String?
+  photoUrl         String?
+  createdAt        DateTime          @default(now())
+  activityLogs     ActivityLog[]
+  feedingSchedules FeedingSchedule[]
+  breedingRecords  BreedingRecord[]
+  mateBreedingRecords BreedingRecord[] @relation("BreedingMate")
+  healthRecords    HealthRecord[]
+  medicalTreatments MedicalTreatment[]
+  transfers        BirdTransfer[]
+  documents        MediaDocument[]
+  feedingHistory   FeedingHistory[]
+  trainingRecords  TrainingRecord[]
+  tasks            TaskAssignment[]
+
+  @@map("bird")
+}
+
+model ActivityLog {
+  id           Int      @id @default(autoincrement())
+  birdId       Int
+  userId       Int
+  bird         Bird     @relation(fields: [birdId], references: [id])
+  user         User     @relation(fields: [userId], references: [id])
+  activityType String
+  activityTime DateTime
+  description  String?
+  photoUrl     String?
+  createdAt    DateTime @default(now())
+
+  @@map("activitylog")
+}
+
+model FeedingType {
+  id          Int               @id @default(autoincrement())
+  name        String            @unique @db.VarChar(100)
+  unit        String            @default("kg") @db.VarChar(24)
+  description String?           @db.LongText
+  active      Boolean           @default(true)
+  createdAt   DateTime          @default(now()) @map("created_at") @db.Timestamp(0)
+  updatedAt   DateTime          @default(now()) @updatedAt @map("updated_at") @db.Timestamp(0)
+  schedules   FeedingSchedule[]
+
+  @@map("feeding_types")
+}
+
+model FeedingSchedule {
+  id             Int             @id @default(autoincrement())
+  birdId         Int
+  userId         Int
+  feedingTypeId  Int?            @map("feeding_type_id")
+  bird           Bird            @relation(fields: [birdId], references: [id])
+  user           User            @relation(fields: [userId], references: [id])
+  feedingType    FeedingType?    @relation(fields: [feedingTypeId], references: [id], onDelete: SetNull)
+  feedingTime    String
+  feedType       String
+  amountKg       Float?
+  frequency      String?
+  medicalNote    String?         @map("catatan_medis") @db.LongText
+  createdAt      DateTime        @default(now())
+  feedingHistory FeedingHistory[]
+
+  @@map("feeding_schedule")
+}
+
+model BreedingRecord {
+  id            Int       @id @default(autoincrement())
+  birdId        Int
+  mateBirdId    Int?      @map("mate_bird_id")
+  bird          Bird      @relation(fields: [birdId], references: [id])
+  mateBird      Bird?     @relation("BreedingMate", fields: [mateBirdId], references: [id], onDelete: SetNull)
+  matingDate    DateTime?
+  eggLayingDate DateTime?
+  eggCount      Int?
+  hatchingDate  DateTime?
+  chickCount    Int?
+  status        String?
+  notes         String?
+  createdById  Int?     @map("user_id")
+  createdBy    User?    @relation("BreedingRecordCreator", fields: [createdById], references: [id], onDelete: SetNull)
+
+  @@map("breedingrecord")
+}
+
+model User {
+  id                  Int                 @id @default(autoincrement())
+  username            String              @unique @db.VarChar(50)
+  passwordHash        String              @map("password") @db.VarChar(255)
+  role                String              @db.VarChar(32)
+  fullName            String              @map("nama_lengkap") @db.VarChar(100)
+  email               String              @unique @db.VarChar(100)
+  phone               String?             @map("no_hp") @db.VarChar(20)
+  isActive            Boolean             @default(true) @map("is_active")
+  profileUrl          String?             @db.LongText
+  createdAt           DateTime            @default(now()) @map("created_at") @db.Timestamp(0)
+  updatedAt           DateTime            @default(now()) @updatedAt @map("updated_at") @db.Timestamp(0)
+  activityLogs        ActivityLog[]
+  feedingSchedules    FeedingSchedule[]
+  healthRecords       HealthRecord[]      @relation("HealthRecordOwner")
+  reportedHealth      HealthRecord[]      @relation("HealthRecordReporter")
+  treatedHealth       HealthRecord[]      @relation("HealthRecordDoctor")
+  transfers           BirdTransfer[]      @relation("TransferResponsible")
+  approvedTransfers   BirdTransfer[]      @relation("TransferApprover")
+  documents           MediaDocument[]
+  stockMovements      FeedStockMovement[]
+  auditLogs           AuditLog[]
+  feedingHistory      FeedingHistory[]
+  trainingRecords     TrainingRecord[]
+  cleaningRecords     CleaningRecord[]
+  foodRequests        FoodRequest[]       @relation("FoodRequestOwner")
+  handledFoodRequests FoodRequest[]       @relation("FoodRequestHandler")
+  assignedTasks       TaskAssignment[]    @relation("TaskAssignee")
+  createdTasks        TaskAssignment[]    @relation("TaskCreator")
+  dailyReports        DailyReport[]       @relation("DailyReportOwner")
+  reviewedReports     DailyReport[]       @relation("DailyReportReviewer")
+  reportReviews       DailyReportReview[]
+  notifications       Notification[]
+  medicalTreatments   MedicalTreatment[]
+  breedingRecords     BreedingRecord[]   @relation("BreedingRecordCreator")
+
+  @@map("users")
+}
+
+model HealthRecord {
+  id                 Int                 @id @default(autoincrement())
+  birdId             Int
+  userId             Int
+  reporterId         Int?                @map("pelapor_id")
+  doctorId           Int?                @map("dokter_id")
+  bird               Bird                @relation(fields: [birdId], references: [id], onDelete: Cascade)
+  user               User                @relation("HealthRecordOwner", fields: [userId], references: [id])
+  reporter           User?               @relation("HealthRecordReporter", fields: [reporterId], references: [id])
+  doctor             User?               @relation("HealthRecordDoctor", fields: [doctorId], references: [id])
+  condition          String              @map("status_kesehatan")
+  symptoms           String              @map("gejala") @db.LongText
+  veterinarian       String?
+  examinationDate    DateTime            @default(now()) @map("tanggal_periksa")
+  treatment          String?             @db.LongText
+  diagnosis          String?             @map("diagnosa") @db.LongText
+  medicalAction      String?             @map("tindakan_medis") @db.LongText
+  dietRecommendation String?             @map("rekomendasi_pakan") @db.LongText
+  quarantine         Boolean             @default(false) @map("butuh_karantina")
+  nextCheckup        DateTime?
+  photoUrl           String?             @db.LongText
+  createdAt          DateTime            @default(now()) @map("created_at") @db.Timestamp(0)
+  updatedAt          DateTime            @default(now()) @map("updated_at") @db.Timestamp(0)
+  medications        MedicalTreatment[]
+
+  @@index([birdId, examinationDate])
+  @@index([nextCheckup])
+  @@map("kesehatan_burung")
+}
+
+model BirdTransfer {
+  id             Int      @id @default(autoincrement())
+  birdId         Int
+  fromHabitatId  Int
+  toHabitatId    Int
+  userId         Int
+  approvedById   Int?     @map("approved_by_id")
+  approvedAt     DateTime? @map("approved_at")
+  approvalStatus String   @default("pending") @map("approval_status")
+  isQuarantine   Boolean  @default(false) @map("is_quarantine")
+  reviewNote     String?  @map("review_note") @db.LongText
+  bird           Bird     @relation(fields: [birdId], references: [id])
+  fromHabitat    Habitat  @relation("TransferFrom", fields: [fromHabitatId], references: [id])
+  toHabitat      Habitat  @relation("TransferTo", fields: [toHabitatId], references: [id])
+  responsible    User     @relation("TransferResponsible", fields: [userId], references: [id])
+  approvedBy     User?    @relation("TransferApprover", fields: [approvedById], references: [id])
+  movedAt        DateTime @default(now())
+  reason         String?  @db.LongText
+  createdAt      DateTime @default(now())
+
+  @@index([birdId, movedAt])
+  @@map("perpindahan")
+}
+
+model FeedInventoryItem {
+  id                  Int                 @id @default(autoincrement())
+  name                String              @unique
+  unit                String              @default("kg")
+  currentStock        Float               @default(0)
+  minimumStock        Float               @default(0)
+  maximumStock        Float?
+  containerUnit       String              @default("container")
+  containerCapacityKg Float               @default(40)
+  createdAt           DateTime            @default(now())
+  updatedAt           DateTime            @updatedAt
+  movements           FeedStockMovement[]
+
+  @@map("feedinventoryitem")
+}
+
+model FeedStockMovement {
+  id          Int               @id @default(autoincrement())
+  inventoryId Int
+  userId      Int
+  inventory   FeedInventoryItem @relation(fields: [inventoryId], references: [id])
+  user        User              @relation(fields: [userId], references: [id])
+  change      Float
+  note        String?           @db.LongText
+  createdAt   DateTime          @default(now())
+
+  @@index([inventoryId, createdAt])
+
+  @@map("feedstockmovement")
+}
+
+model MediaDocument {
+  id          Int      @id @default(autoincrement())
+  birdId      Int?
+  userId      Int
+  bird        Bird?    @relation(fields: [birdId], references: [id])
+  user        User     @relation(fields: [userId], references: [id])
+  category    String
+  fileName    String
+  fileUrl     String
+  mimeType    String
+  sizeBytes   Int
+  description String?  @db.LongText
+  createdAt   DateTime @default(now())
+
+  @@index([birdId, category])
+
+  @@map("mediadocument")
+}
+
+model AuditLog {
+  id        Int      @id @default(autoincrement())
+  userId    Int?
+  user      User?    @relation(fields: [userId], references: [id])
+  action    String
+  entity    String
+  entityId  Int?
+  path      String
+  createdAt DateTime @default(now())
+
+  @@index([entity, entityId, createdAt])
+  @@index([userId, createdAt])
+
+  @@map("auditlog")
+}
+
+model FeedingHistory {
+  id                Int              @id @default(autoincrement())
+  feedingScheduleId Int?             @map("feeding_schedule_id")
+  birdId            Int              @map("bird_id")
+  userId            Int              @map("user_id")
+  feedType          String            @map("feed_type") @db.VarChar(100)
+  amount            Float
+  unit              String            @default("kg") @db.VarChar(24)
+  fedAt             DateTime          @default(now()) @map("fed_at")
+  notes             String?           @db.LongText
+  photoUrl          String?           @map("photo_url") @db.LongText
+  createdAt         DateTime          @default(now()) @map("created_at") @db.Timestamp(0)
+  schedule          FeedingSchedule?  @relation(fields: [feedingScheduleId], references: [id], onDelete: SetNull)
+  bird              Bird              @relation(fields: [birdId], references: [id])
+  user              User              @relation(fields: [userId], references: [id])
+
+  @@index([birdId, fedAt])
+  @@index([userId, fedAt])
+  @@map("feeding_history")
+}
+
+model TrainingRecord {
+  id          Int      @id @default(autoincrement())
+  birdId      Int      @map("bird_id")
+  trainerId   Int      @map("trainer_id")
+  title       String   @db.VarChar(150)
+  technique   String?  @db.LongText
+  outcome     String?  @db.LongText
+  notes       String?  @db.LongText
+  trainedAt   DateTime @default(now()) @map("trained_at")
+  photoUrl    String?  @map("photo_url") @db.LongText
+  createdAt   DateTime @default(now()) @map("created_at") @db.Timestamp(0)
+  bird        Bird     @relation(fields: [birdId], references: [id])
+  trainer     User     @relation(fields: [trainerId], references: [id])
+
+  @@index([birdId, trainedAt])
+  @@map("training_records")
+}
+
+model CleaningRecord {
+  id          Int      @id @default(autoincrement())
+  habitatId   Int      @map("habitat_id")
+  userId      Int      @map("user_id")
+  cleanedAt   DateTime @default(now()) @map("cleaned_at")
+  area        String   @db.VarChar(120)
+  checklist   String?  @db.LongText
+  status      String   @default("Selesai") @db.VarChar(32)
+  notes       String?  @db.LongText
+  photoUrl    String?  @map("photo_url") @db.LongText
+  createdAt   DateTime @default(now()) @map("created_at") @db.Timestamp(0)
+  habitat     Habitat  @relation(fields: [habitatId], references: [id])
+  user        User     @relation(fields: [userId], references: [id])
+
+  @@index([habitatId, cleanedAt])
+  @@map("cleaning_records")
+}
+
+model FoodRequest {
+  id             Int       @id @default(autoincrement())
+  requestedById  Int       @map("requested_by_id")
+  handledById    Int?      @map("handled_by_id")
+  feedType       String    @map("feed_type") @db.VarChar(100)
+  quantity       Float?
+  unit           String    @default("kg") @db.VarChar(24)
+  reason         String    @db.LongText
+  status         String    @default("MENUNGGU") @db.VarChar(24)
+  handlerNotes   String?   @map("handler_notes") @db.LongText
+  handledAt      DateTime? @map("handled_at")
+  createdAt      DateTime  @default(now()) @map("created_at") @db.Timestamp(0)
+  updatedAt      DateTime  @default(now()) @updatedAt @map("updated_at") @db.Timestamp(0)
+  requestedBy    User      @relation("FoodRequestOwner", fields: [requestedById], references: [id])
+  handledBy      User?     @relation("FoodRequestHandler", fields: [handledById], references: [id])
+
+  @@index([status, createdAt])
+  @@map("food_requests")
+}
+
+model TaskAssignment {
+  id           Int       @id @default(autoincrement())
+  assignedById Int       @map("assigned_by_id")
+  assignedToId Int       @map("assigned_to_id")
+  birdId       Int?      @map("bird_id")
+  habitatId    Int?      @map("habitat_id")
+  title        String    @db.VarChar(150)
+  activityType String    @map("activity_type") @db.VarChar(50)
+  details      String?   @db.LongText
+  dueAt        DateTime? @map("due_at")
+  status       String    @default("DITUGASKAN") @db.VarChar(24)
+  completionNote String? @map("completion_note") @db.LongText
+  createdAt    DateTime  @default(now()) @map("created_at") @db.Timestamp(0)
+  updatedAt    DateTime  @default(now()) @updatedAt @map("updated_at") @db.Timestamp(0)
+  assignedBy   User      @relation("TaskCreator", fields: [assignedById], references: [id])
+  assignedTo   User      @relation("TaskAssignee", fields: [assignedToId], references: [id])
+  bird         Bird?     @relation(fields: [birdId], references: [id], onDelete: SetNull)
+  habitat      Habitat?  @relation(fields: [habitatId], references: [id], onDelete: SetNull)
+
+  @@index([assignedToId, status, dueAt])
+  @@map("task_assignments")
+}
+
+model DailyReport {
+  id         Int                 @id @default(autoincrement())
+  userId     Int                 @map("user_id")
+  reportDate DateTime            @map("report_date") @db.Date
+  status     String              @default("DRAFT") @db.VarChar(24)
+  submittedAt DateTime?          @map("submitted_at")
+  reviewerId Int?                @map("reviewer_id")
+  reviewedAt DateTime?           @map("reviewed_at")
+  reviewNote String?             @map("review_note") @db.LongText
+  createdAt  DateTime            @default(now()) @map("created_at") @db.Timestamp(0)
+  updatedAt  DateTime            @default(now()) @updatedAt @map("updated_at") @db.Timestamp(0)
+  user       User                @relation("DailyReportOwner", fields: [userId], references: [id])
+  reviewer   User?               @relation("DailyReportReviewer", fields: [reviewerId], references: [id])
+  reviews    DailyReportReview[]
+
+  @@unique([userId, reportDate])
+  @@index([reportDate, status])
+  @@map("daily_reports")
+}
+
+model DailyReportReview {
+  id            Int         @id @default(autoincrement())
+  dailyReportId Int         @map("daily_report_id")
+  userId        Int         @map("user_id")
+  action        String      @db.VarChar(24)
+  note          String?     @db.LongText
+  createdAt     DateTime    @default(now()) @map("created_at") @db.Timestamp(0)
+  dailyReport   DailyReport @relation(fields: [dailyReportId], references: [id], onDelete: Cascade)
+  user          User        @relation(fields: [userId], references: [id])
+
+  @@index([dailyReportId, createdAt])
+  @@map("daily_report_reviews")
+}
+
+model Notification {
+  id        Int       @id @default(autoincrement())
+  userId    Int?      @map("user_id")
+  role      String?   @db.VarChar(32)
+  title     String    @db.VarChar(150)
+  message   String    @db.LongText
+  type      String    @default("INFO") @db.VarChar(24)
+  link      String?   @db.VarChar(255)
+  readAt    DateTime? @map("read_at")
+  createdAt DateTime  @default(now()) @map("created_at") @db.Timestamp(0)
+  user      User?     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, readAt, createdAt])
+  @@index([role, readAt, createdAt])
+  @@map("notifications")
+}
+
+model MedicalTreatment {
+  id             Int          @id @default(autoincrement())
+  healthRecordId Int?         @map("health_record_id")
+  birdId         Int          @map("bird_id")
+  userId         Int          @map("user_id")
+  condition      String       @db.VarChar(32)
+  symptoms       String       @db.LongText
+  medicine       String       @db.VarChar(120)
+  dosage         String       @db.VarChar(120)
+  timesPerDay    Int          @default(1) @map("times_per_day")
+  durationDays   Int          @map("duration_days")
+  instructions   String?      @db.LongText
+  startsAt       DateTime     @map("starts_at")
+  endsAt         DateTime?    @map("ends_at")
+  nextCheckup    DateTime?    @map("next_checkup")
+  createdAt      DateTime     @default(now()) @map("created_at") @db.Timestamp(0)
+  bird           Bird         @relation(fields: [birdId], references: [id], onDelete: Cascade)
+  healthRecord   HealthRecord? @relation(fields: [healthRecordId], references: [id], onDelete: Cascade)
+  user           User         @relation(fields: [userId], references: [id])
+
+  @@index([healthRecordId, startsAt])
+  @@index([birdId, startsAt])
+  @@map("medical_treatments")
+}
